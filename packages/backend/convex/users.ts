@@ -16,6 +16,14 @@ export const add = mutation({
     if (identity === null) {
       throw new Error("Not authenticated");
     }
+
+    const orgId = identity?.orgId as string;
+
+    if(!orgId) {
+      throw new Error("Missing organization")
+    }
+
+    throw new Error("Missing organization")
     const userId = await cxt.db.insert("users", {
       name: "Rakib",
     });
