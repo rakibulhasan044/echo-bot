@@ -23,7 +23,7 @@ export const add = mutation({
       throw new Error("Missing organization")
     }
 
-    throw new Error("Missing organization")
+    // throw new Error("Missing organization")
     const userId = await cxt.db.insert("users", {
       name: "Rakib",
     });
