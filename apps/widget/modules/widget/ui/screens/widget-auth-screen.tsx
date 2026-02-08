@@ -11,11 +11,16 @@ import {
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import WidgetHeader from "../components/widget-header";
+import { useMutation } from "convex/react";
+import { api } from "@workspace/backend/_generated/api";
+import { Doc } from "@workspace/backend/_generated/dataModel";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email"),
 });
+
+const organizationId = "123";
 
 const WidgetAuthScreen = () => {
   const form = useForm<z.infer<typeof formSchema>>({
@@ -26,8 +31,34 @@ const WidgetAuthScreen = () => {
     },
   });
 
+  const createContactSession = useMutation(api.public.contactSession.create);
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+    if (!organizationId) {
+      return;
+    }
+    const metadata: Doc<"contactSession">["metadata"] = {
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      languages: navigator.languages?.join(","),
+      platform: navigator.platform,
+      vendor: navigator.vendor,
+      screenResolution: `${screen.width}x${screen.height}`,
+      viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezoneOffset: new Date().getTimezoneOffset().toString(),
+      cookieEnabled: navigator.cookieEnabled.toString(),
+      referrer: document.referrer || "direct",
+      currentUrl: window.location.href,
+    };
+
+    const contactSessionId = await createContactSession({
+      ...values,
+      organizationId,
+      metadata,
+      expireAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
+    });
+
+    console.log({contactSessionId});
   };
   return (
     <>
@@ -55,9 +86,34 @@ const WidgetAuthScreen = () => {
                     {...field}
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <Input
+                    className="h-10 bg-background"
+                    placeholder="name@gmail.com"
+                    type="email"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button
+            disabled={form.formState.isSubmitting}
+            size={"lg"}
+            type="submit"
+          >
+            Continue
+          </Button>
         </form>
       </Form>
     </>
