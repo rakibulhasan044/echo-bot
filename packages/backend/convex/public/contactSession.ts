@@ -8,7 +8,6 @@ export const create = mutation({
     name: v.string(),
     email: v.string(),
     organizationId: v.string(),
-    expireAt: v.number(),
     metadata: v.optional(
       v.object({
         userAgent: v.optional(v.string()),
@@ -38,5 +37,24 @@ export const create = mutation({
     });
 
     return contactSessionId;
+  },
+});
+
+export const validate = mutation({
+  args: {
+    contactSessionId: v.id("contactSession"),
+  },
+  handler: async (convexToJson, args) => {
+    const contactSession = await convexToJson.db.get(args.contactSessionId);
+
+    if (!contactSession) {
+      return { valid: false, reason: "Contact session not found" };
+    }
+
+    if (contactSession.expireAt < Date.now()) {
+      return { valid: false, reason: "Contact session expired" };
+    }
+
+    return { valid: true, contactSession };
   },
 });
